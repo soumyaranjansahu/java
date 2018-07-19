@@ -1,0 +1,1054 @@
+0.5 Case Study: Payroll System Using Polymorphism
+This section reexamines the CommissionEmployee-BasePlusCommissionEmployee hierarchy that we explored throughout Section 9.4. Now we use an abstract method and polymorphism to perform payroll calculations based on the type of employee. We create an enhanced employee hierarchy to solve the following problem:
+
+A company pays its employees on a weekly basis. The employees are of four types: Salaried employees are paid a fixed weekly salary regardless of the number of hours worked, hourly employees are paid by the hour and receive overtime pay for all hours worked in excess of 40 hours, commission employees are paid a percentage of their sales and salaried-commission employees receive a base salary plus a percentage of their sales. For the current pay period, the company has decided to reward salaried-commission employees by adding 10% to their base salaries. The company wants to implement a Java application that performs its payroll calculations polymorphically.
+We use abstract class Employee to represent the general concept of an employee. The classes that extend Employee are SalariedEmployee, CommissionEmployee and HourlyEmployee. Class BasePlusCommissionEmployee—which extends CommissionEmployee—represents the last employee type. The UML class diagram in Fig. 10.2 shows the inheritance hierarchy for our polymorphic employee-payroll application. Note that abstract class Employee is italicized, as per the convention of the UML.
+
+
+      Figure 10.2
+   
+Fig. 10.2 Employee hierarchy UML class diagram.
+
+Abstract superclass Employee declares the “interface” to the hierarchy—that is, the set of methods that a program can invoke on all Employee objects. We use the term “interface” here in a general sense to refer to the various ways programs can communicate with objects of any Employee subclass. Be careful not to confuse the general notion of an “interface” to something with the formal notion of a Java interface, the subject of Section 10.7. Each employee, regardless of the way his or her earnings are calculated, has a first name, a last name and a social security number, so private instance variables firstName, lastName and socialSecurityNumber appear in abstract superclass Employee.
+
+Software Engineering Observation 10.4
+seo-jtcolor1.jpg
+
+A subclass can inherit “interface” or “implementation” from a superclass. Hierarchies designed for implementation inheritance tend to have their functionality high in the hierarchy—each new subclass inherits one or more methods that were implemented in a superclass, and the subclass uses the superclass implementations. Hierarchies designed for interface inheritance tend to have their functionality lower in the hierarchy—a superclass specifies one or more abstract methods that must be declared for each concrete class in the hierarchy, and the individual subclasses override these methods to provide subclass-specific implementations.
+
+The following sections implement the Employee class hierarchy. Each of the first four sections implements one of the concrete classes. The last section implements a test program that builds objects of all these classes and processes those objects polymorphically.
+
+10.5.1 Creating Abstract Superclass Employee
+Class Employee (Fig. 10.4) provides methods earnings and toString, in addition to the get and set methods that manipulate Employee’s instance variables. An earnings method certainly applies generically to all employees. But each earnings calculation depends on the employee’s class. So we declare earnings as abstract in superclass Employee because a default implementation does not make sense for that method—there is not enough information to determine what amount earnings should return. Each subclass overrides earnings with an appropriate implementation. To calculate an employee’s earnings, the program assigns a reference to the employee’s object to a superclass Employee variable, then invokes the earnings method on that variable. We maintain an array of Employee variables, each of which holds a reference to an Employee object (of course, there cannot be Employee objects because Employee is an abstract class—because of inheritance, however, all objects of all subclasses of Employee may nevertheless be thought of as Employee objects). The program iterates through the array and calls method earnings for each Employee object. Java processes these method calls polymorphically. Including earnings as an abstract method in Employee forces every direct subclass of Employee to override earnings in order to become a concrete class. This enables the designer of the class hierarchy to demand that each concrete subclass provide an appropriate pay calculation.
+
+Method toString in class Employee returns a String containing the first name, last name and social security number of the employee. As we’ll see, each subclass of Employee overrides method toString to create a string representation of an object of that class that contains the employee’s type (e.g., "salaried employee:") followed by the rest of the employee’s information.
+
+The diagram in Fig. 10.3 shows each of the five classes in the hierarchy down the left side and methods earnings and toString across the top. For each class, the diagram shows the desired results of each method. [Note: We do not list superclass Employee’s get and set methods because they are not overridden in any of the subclasses—each of these methods is inherited and used “as is” by each of the subclasses.]
+
+
+      Figure 10.3
+   
+Fig. 10.3 Polymorphic interface for the Employee hierarchy classes.
+
+Let us consider class Employee’s declaration (Fig. 10.4). The class includes a constructor that takes the first name, last name and social security number as arguments (lines 11–16); get methods that return the first name, last name and social security number (lines 25–28, 37–40 and 49–52, respectively); set methods that set the first name, last name and social security number (lines 19–22, 31–34 and 43–46, respectively); method toString (lines 55–59), which returns the string representation of Employee; and abstract method earnings (line 62), which will be implemented by subclasses. Note that the Employee constructor does not validate the social security number in this example. Normally, such validation should be provided.
+
+Fig. 10.4. Employee abstract superclass.
+ 1  // Fig. 10.4: Employee.java
+ 2  // Employee abstract superclass.
+ 3
+ 4  public abstract class Employee
+ 5  {
+ 6     private String firstName;
+ 7     private String lastName;
+ 8     private String socialSecurityNumber;
+ 9
+10     // three-argument constructor
+11     public Employee( String first, String last, String ssn )
+12     {
+13        firstName = first;
+14        lastName = last;
+15        socialSecurityNumber = ssn;
+16     } // end three-argument Employee constructor
+17
+18     // set first name
+19     public void setFirstName( String first )
+20     {
+21        firstName = first;
+22     } // end method setFirstName
+23
+24     // return first name
+25     public String getFirstName()
+26     {
+27        return firstName;
+28     } // end method getFirstName
+29
+30     // set last name
+31     public void setLastName( String last )
+32     {
+33        lastName = last;
+34     } // end method setLastName
+35
+36        // return last name
+37     public String getLastName()
+38     {
+39        return lastName;
+40     } // end method getLastName
+41
+42     // set social security number
+43     public void setSocialSecurityNumber( String ssn )
+44     {
+45        socialSecurityNumber = ssn; // should validate
+46     } // end method setSocialSecurityNumber
+47
+48     // return social security number
+49     public String getSocialSecurityNumber()
+50     {
+51        return socialSecurityNumber;
+52     } // end method getSocialSecurityNumber
+53
+54     // return String representation of Employee object
+55     public String toString()
+56     {
+57        return String.format( "%s %s\nsocial security number: %s",
+58           getFirstName(), getLastName(), getSocialSecurityNumber() );
+59     } // end method toString
+60
+61     // abstract method overridden by subclasses
+62     public abstract double earnings(); // no implementation here
+63  } // end abstract class Employee
+Why did we decide to declare earnings as an abstract method? It simply does not make sense to provide an implementation of this method in class Employee. We cannot calculate the earnings for a general Employee—we first must know the specific Employee type to determine the appropriate earnings calculation. By declaring this method abstract, we indicate that each concrete subclass must provide an appropriate earnings implementation and that a program will be able to use superclass Employee variables to invoke method earnings polymorphically for any type of Employee.
+
+10.5.2 Creating Concrete Subclass SalariedEmployee
+Class SalariedEmployee (Fig. 10.5) extends class Employee (line 4) and overrides earnings (lines 29–32), which makes SalariedEmployee a concrete class. The class includes a constructor (lines 9–14) that takes a first name, a last name, a social security number and a weekly salary as arguments; a set method to assign a new nonnegative value to instance variable weeklySalary (lines 17–20); a get method to return weeklySalary’s value (lines 23–26); a method earnings (lines 29–32) to calculate a SalariedEmployee’s earnings; and a method toString (lines 35–39), which returns a String including the employee’s type, namely, "salaried employee: " followed by employee-specific information produced by superclass Employee’s toString method and SalariedEmployee’s getWeeklySalary method. Class SalariedEmployee’s constructor passes the first name, last name and social security number to the Employee constructor (line 12) to initialize the private instance variables not inherited from the superclass. Method earnings overrides abstract method earnings in Employee to provide a concrete implementation that returns the SalariedEmployee’s weekly salary. If we do not implement earnings, class SalariedEmployee must be declared abstract—otherwise, a compilation error occurs (and, of course, we want SalariedEmployee here to be a concrete class).
+
+Fig. 10.5. SalariedEmployee class derived from Employee.
+ 1  // Fig. 10.5: SalariedEmployee.java
+ 2  // SalariedEmployee class extends Employee.
+ 3
+ 4  public class SalariedEmployee extends Employee
+ 5  {
+ 6     private double weeklySalary;
+ 7
+ 8     // four-argument constructor
+ 9     public SalariedEmployee( String first, String last, String ssn,
+10        double salary )
+11     {
+12        super( first, last, ssn ); // pass to Employee constructor
+13        setWeeklySalary( salary ); // validate and store salary
+14     } // end four-argument SalariedEmployee constructor
+15
+16     // set salary
+17     public void setWeeklySalary( double salary )
+18     {
+19        weeklySalary = salary < 0.0 ? 0.0 : salary;
+20     } // end method setWeeklySalary
+21
+22     // return salary
+23     public double getWeeklySalary()
+24     {
+25        return weeklySalary;
+26     } // end method getWeeklySalary
+27
+28     // calculate earnings; override abstract method earnings in Employee
+29     public double earnings()
+30     {
+31        return getWeeklySalary();
+32     } // end method earnings
+33
+34     // return String representation of SalariedEmployee object
+35     public String toString()
+36     {
+37        return String.format( "salaried employee: %s\n%s: $%,.2f",
+38           super.toString(), "weekly salary", getWeeklySalary() );
+39     } // end method toString
+40  } // end class SalariedEmployee
+Method toString (lines 35–39) of class SalariedEmployee overrides Employee method toString. If class SalariedEmployee did not override toString, SalariedEmployee would have inherited the Employee version of toString. In that case, SalariedEmployee’s toString method would simply return the employee’s full name and social security number, which does not adequately represent a SalariedEmployee. To produce a complete string representation of a SalariedEmployee, the subclass’s toString method returns "salaried employee: " followed by the superclass Employee-specific information (i.e., first name, last name and social security number) obtained by invoking the superclass’s toString method (line 38)—this is a nice example of code reuse. The string representation of a SalariedEmployee also contains the employee’s weekly salary obtained by invoking the class’s getWeeklySalary method.
+
+10.5.3 Creating Concrete Subclass HourlyEmployee
+Class HourlyEmployee (Fig. 10.6) also extends Employee (line 4). The class includes a constructor (lines 10–16) that takes as arguments a first name, a last name, a social security number, an hourly wage and the number of hours worked. Lines 19–22 and 31–35 declare set methods that assign new values to instance variables wage and hours, respectively. Method setWage (lines 19–22) ensures that wage is nonnegative, and method setHours (lines 31–35) ensures that hours is between 0 and 168 (the total number of hours in a week) inclusive. Class HourlyEmployee also includes get methods (lines 25–28 and 38–41) to return the values of wage and hours, respectively; a method earnings (lines 44–50) to calculate an HourlyEmployee’s earnings; and a method toString (lines 53–58), which returns the employee’s type, namely, "hourly employee: " and Employee-specific information. Note that the HourlyEmployee constructor, like the SalariedEmployee constructor, passes the first name, last name and social security number to the superclass Employee constructor (line 13) to initialize the private instance variables. In addition, method toString calls superclass method toString (line 56) to obtain the Employee-specific information (i.e., first name, last name and social security number)—this is another nice example of code reuse.
+
+Fig. 10.6. HourlyEmployee class derived from Employee.
+ 1  // Fig. 10.6: HourlyEmployee.java
+ 2  // HourlyEmployee class extends Employee.
+ 3
+ 4  public class HourlyEmployee extends Employee
+ 5  {
+ 6     private double wage; // wage per hour
+ 7     private double hours; // hours worked for week
+ 8
+ 9     // five-argument constructor
+10     public HourlyEmployee( String first, String last, String ssn,
+11        double hourlyWage, double hoursWorked )
+12     {
+13        super( first, last, ssn );
+14        setWage( hourlyWage ); // validate hourly wage
+15        setHours( hoursWorked ); // validate hours worked
+16     } // end five-argument HourlyEmployee constructor
+17
+18     // set wage
+19     public void setWage( double hourlyWage )
+20     {
+21        wage = ( hourlyWage < 0.0 ) ? 0.0 : hourlyWage;
+22     } // end method setWage
+23
+24     // return wage
+25     public double getWage()
+26     {
+27        return wage;
+28     } // end method getWage
+29
+30     // set hours worked
+31     public void setHours( double hoursWorked )
+32     {
+33        hours = ( ( hoursWorked >= 0.0 ) && ( hoursWorked <= 168.0 ) ) ?
+34           hoursWorked : 0.0;
+35     } // end method setHours
+36
+37     // return hours worked
+38     public double getHours()
+39     {
+40        return hours;
+41     } // end method getHours
+42
+43     // calculate earnings; override abstract method earnings in Employee
+44     public double earnings()
+45     {
+46        if ( getHours() <= 40 ) // no overtime
+47           return getWage() * getHours();
+48        else
+49           return 40 * getWage() + ( gethours() - 40 ) * getWage() * 1.5;
+50     } // end method earnings
+51
+52     // return String representation of HourlyEmployee object
+53     public String toString()
+54     {
+55        return String.format( "hourly employee: %s\n%s: $%,.2f; %s: %,.2f",
+56           super.toString(), "hourly wage", getWage(),
+57           "hours worked", getHours() );
+58     } // end method toString
+59  } // end class HourlyEmployee
+10.5.4 Creating Concrete Subclass CommissionEmployee
+Class CommissionEmployee (Fig. 10.7) extends class Employee (line 4). The class includes a constructor (lines 10–16) that takes a first name, a last name, a social security number, a sales amount and a commission rate; set methods (lines 19–22 and 31–34) to assign new values to instance variables commissionRate and grossSales, respectively; get methods (lines 25–28 and 37–40) that retrieve the values of these instance variables; method earnings (lines 43–46) to calculate a CommissionEmployee’s earnings; and method toString (lines 49–55), which returns the employee’s type, namely, "commission employee: " and Employee-specific information. The constructor also passes the first name, last name and social security number to Employee’s constructor (line 13) to initialize Employee’s private instance variables. Method toString calls superclass method toString (line 52) to obtain the Employee-specific information (i.e., first name, last name and social security number).
+
+Fig. 10.7. CommissionEmployee class derived from Employee.
+ 1  // Fig. 10.7: CommissionEmployee.java
+ 2  // CommissionEmployee class extends Employee.
+ 3
+ 4  public class CommissionEmployee extends Employee
+ 5  {
+ 6     private double grossSales; // gross weekly sales
+ 7     private double commissionRate; // commission percentage
+ 8
+ 9     // five-argument constructor
+10     public CommissionEmployee( String first, String last, String ssn,
+11        double sales, double rate )
+12     {
+13        super( first, last, ssn );
+14        setGrossSales( sales );
+15        setCommissionRate( rate );
+16     } // end five-argument CommissionEmployee constructor
+17
+18     // set commission rate
+19     public void setCommissionRate( double rate )
+20     {
+21        commissionRate = ( rate > 0.0 && rate < 1.0 ) ? rate : 0.0;
+22     } // end method setCommissionRate
+23
+24     // return commission rate
+25     public double getCommissionRate()
+26     {
+27        return commissionRate;
+28     } // end method getCommissionRate
+29
+30     // set gross sales amount
+31     public void setGrossSales( double sales )
+32     {
+33        grossSales = ( sales < 0.0 ) ? 0.0 : sales;
+34     } // end method setGrossSales
+35
+36     // return gross sales amount
+37     public double getGrossSales()
+38     {
+39        return grossSales;
+40     } // end method getGrossSales
+41
+42     // calculate earnings; override abstract method earnings in Employee
+43     public double earnings()
+44     {
+45        return getCommissionRate() * getGrossSales();
+46     } // end method earnings
+47
+48     // return String representation of CommissionEmployee object
+49     public String toString()
+50     {
+51        return String.format( "%s: %s\n%s: $%,.2f; %s: %.2f",
+52           "commission employee", super.toString(),
+53           "gross sales", getGrossSales(),
+54           "commission rate", getCommissionRate() );
+55     } // end method toString
+56  } // end class CommissionEmployee
+10.5.5 Creating Indirect Concrete Subclass BasePlusCommissionEmployee
+Class BasePlusCommissionEmployee (Fig. 10.8) extends class CommissionEmployee (line 4) and therefore is an indirect subclass of class Employee. Class BasePlusCommissionEmployee has a constructor (lines 9–14) that takes as arguments a first name, a last name, a social security number, a sales amount, a commission rate and a base salary. It then passes the first name, last name, social security number, sales amount and commission rate to the CommissionEmployee constructor (line 12) to initialize the inherited members. BasePlusCommissionEmployee also contains a set method (lines 17–20) to assign a new value to instance variable baseSalary and a get method (lines 23–26) to return baseSalary’s value. Method earnings (lines 29–32) calculates a BasePlusCommissionEmployee’s earnings. Note that line 31 in method earnings calls superclass CommissionEmployee’s earnings method to calculate the commission-based portion of the employee’s earnings. This is a nice example of code reuse. BasePlusCommissionEmployee’s toString method (lines 35–40) creates a string representation of a BasePlusCommissionEmployee that contains "base-salaried", followed by the String obtained by invoking superclass CommissionEmployee’s toString method (another example of code reuse), then the base salary. The result is a String beginning with "base-salaried commission employee" followed by the rest of the BasePlusCommissionEmployee’s information. Recall that CommissionEmployee’s toString obtains the employee’s first name, last name and social security number by invoking the toString method of its superclass (i.e., Employee)—yet another example of code reuse. Note that BasePlusCommissionEmployee’s toString initiates a chain of method calls that span all three levels of the Employee hierarchy.
+
+Fig. 10.8. BasePlusCommissionEmployee derives from CommissionEmployee.
+ 1  // Fig. 10.8: BasePlusCommissionEmployee.java
+ 2  // BasePlusCommissionEmployee class extends CommissionEmployee.
+ 3
+ 4  public class BasePlusCommissionEmployee extends CommissionEmployee
+ 5  {
+ 6     private double baseSalary; // base salary per week
+ 7
+ 8     // six-argument constructor
+ 9     public BasePlusCommissionEmployee( String first, String last,
+10        String ssn, double sales, double rate, double salary )
+11     {
+12        super( first, last, ssn, sales, rate );
+13        setBaseSalary( salary ); // validate and store base salary
+14     } // end six-argument BasePlusCommissionEmployee constructor
+15
+16        // set base salary
+17     public void setBaseSalary( double salary )
+18     {
+19        baseSalary = ( salary < 0.0 ) ? 0.0 : salary; // non-negative
+20     } // end method setBaseSalary
+21
+22     // return base salary
+23     public double getBaseSalary()
+24     {
+25        return baseSalary;
+26     } // end method getBaseSalary
+27
+28     // calculate earnings; override method earnings in CommissionEmployee
+29     public double earnings()
+30     {
+31        return getBaseSalary() + super.earnings();
+32     } // end method earnings
+33
+34     // return String representation of BasePlusCommissionEmployee object
+35     public String toString()
+36     {
+37        return String.format( "%s %s; %s: $%,.2f",
+38           "base-salaried", super.toString(),
+39           "base salary", getBaseSalary() );
+40     } // end method toString
+41  } // end class BasePlusCommissionEmployee
+10.5.6 Demonstrating Polymorphic Processing, Operator instanceof and Downcasting
+To test our Employee hierarchy, the application in Fig. 10.9 creates an object of each of the four concrete classes SalariedEmployee, HourlyEmployee, CommissionEmployee and BasePlusCommissionEmployee. The program manipulates these objects, first via variables of each object’s own type, then polymorphically, using an array of Employee variables. While processing the objects polymorphically, the program increases the base salary of each BasePlusCommissionEmployee by 10% (this, of course, requires determining the object’s type at execution time). Finally, the program polymorphically determines and outputs the type of each object in the Employee array. Lines 9–18 create objects of each of the four concrete Employee subclasses. Lines 22–30 output the string representation and earnings of each of these objects. Note that each object’s toString method is called implicitly by printf when the object is output as a String with the %s format specifier.
+
+Fig. 10.9. Employee class hierarchy test program.
+ 1  // Fig. 10.9: PayrollSystemTest.java
+ 2  // Employee hierarchy test program.
+ 3
+ 4  public class PayrollSystemTest
+ 5  {
+ 6     public static void main( String args[] )
+ 7     {
+ 8        // create subclass objects
+ 9        SalariedEmployee salariedEmployee =
+10           new SalariedEmployee( "John", "Smith", "111-11-1111", 800.00 );
+11        HourlyEmployee hourlyEmployee =
+12           new HourlyEmployee( "Karen", "Price", "222-22-2222", 16.75, 40 );
+13        CommissionEmployee commissionEmployee =
+14           new CommissionEmployee(
+15           "Sue", "Jones", "333-33-3333", 10000, .06 );
+16        BasePlusCommissionEmployee basePlusCommissionEmployee =
+17           new BasePlusCommissionEmployee(
+18           "Bob", "Lewis", "444-44-4444", 5000, .04, 300 );
+19
+20        System.out.println( "Employees processed individually:\n" );
+21
+22        System.out.printf( "%s\n%s: $%,.2f\n\n",
+23           salariedEmployee, "earned", salariedEmployee.earnings() );
+24        System.out.printf( "%s\n%s: $%,.2f\n\n",
+25           hourlyEmployee, "earned", hourlyEmployee.earnings() );
+26        System.out.printf( "%s\n%s: $%,.2f\n\n",
+27           commissionEmployee, "earned", commissionEmployee.earnings() );
+28        System.out.printf( "%s\n%s: $%,.2f\n\n",
+29           basePlusCommissionEmployee,
+30           "earned", basePlusCommissionEmployee.earnings() );
+31
+32        // create four-element Employee array
+33        Employee employees[] = new Employee[ 4 ];
+34
+35        // initialize array with Employees
+36        employees[ 0 ] = salariedEmployee;
+37        employees[ 1 ] = hourlyEmployee;
+38        employees[ 2 ] = commissionEmployee;
+39        employees[ 3 ] = basePlusCommissionEmployee;
+40
+41        System.out.println( "Employees processed polymorphically:\n" );
+42
+43        // generically process each element in array employees
+44        for ( Employee currentEmployee : employees )
+45        {
+46           System.out.println( currentEmployee ); // invokes toString
+47
+48           // determine whether element is a BasePlusCommissionEmployee
+49           if ( currentEmployee instanceof BasePlusCommissionEmployee )
+50           {
+51              // downcast Employee reference to
+52              // BasePlusCommissionEmployee reference
+53              BasePlusCommissionEmployee employee =
+54                 ( BasePlusCommissionEmployee ) currentEmployee;
+55
+56              double oldBaseSalary = employee.getBaseSalary();
+57              employee.setBaseSalary( 1.10  * oldBaseSalary );
+58              System.out.printf(
+59                 "new base salary with 10%% increase is: $%,.2f\n",
+60                 employee.getBaseSalary() );
+61           } // end if
+62
+63           System.out.printf(
+64              "earned $%,.2f\n\n", currentEmployee.earnings() );
+65        } // end for
+66
+67        // get type name of each object in employees array
+68        for ( int j = 0; j < employees.length; j++ )
+69           System.out.printf( "Employee %d is a %s\n", j,
+70              employees[ j ].getClass().getName() );
+71     } // end main
+72  } // end class PayrollSystemTest
+Employees processed individually:
+
+salaried employee: John Smith
+social security number: 111-11-1111
+weekly salary: $800.00
+earned: $800.00
+
+hourly employee: Karen Price
+social security number: 222-22-2222
+hourly wage: $16.75; hours worked: 40.00
+earned: $670.00
+
+commission employee: Sue Jones
+social security number: 333-33-3333
+gross sales: $10,000.00; commission rate: 0.06
+earned: $600.00
+
+base-salaried commission employee: Bob Lewis
+social security number: 444-44-4444
+gross sales: $5,000.00; commission rate: 0.04; base salary: $300.00
+earned: $500.00
+
+Employees processed polymorphically:
+
+salaried employee: John Smith
+social security number: 111-11-1111
+weekly salary: $800.00
+earned $800.00
+
+hourly employee: Karen Price
+social security number: 222-22-2222
+hourly wage: $16.75; hours worked: 40.00
+earned $670.00
+
+commission employee: Sue Jones
+social security number: 333-33-3333
+gross sales: $10,000.00; commission rate: 0.06
+earned $600.00
+
+base-salaried commission employee: Bob Lewis
+social security number: 444-44-4444
+gross sales: $5,000.00; commission rate: 0.04; base salary: $300.00
+new base salary with 10% increase is: $330.00
+earned $530.00
+
+Employee 0 is a SalariedEmployee
+Employee 1 is a HourlyEmployee
+Employee 2 is a CommissionEmployee
+Employee 3 is a BasePlusCommissionEmployee
+Line 33 declares employees and assigns it an array of four Employee variables. Line 36 assigns the reference to a SalariedEmployee object to employees[ 0 ]. Line 37 assigns the reference to an HourlyEmployee object to employees[ 1 ]. Line 38 assigns the reference to a CommissionEmployee object to employees[ 2 ]. Line 39 assigns the reference to a BasePlusCommissionEmployee object to employee[ 3 ]. Each assignment is allowed, because a SalariedEmployee is an Employee, an HourlyEmployee is an Employee, a CommissionEmployee is an Employee and a BasePlusCommissionEmployee is an Employee. Therefore, we can assign the references of SalariedEmployee, HourlyEmployee, CommissionEmployee and BasePlusCommissionEmployee objects to superclass Employee variables, even though Employee is an abstract class.
+
+Lines 44–65 iterate through array employees and invoke methods toString and earnings with Employee control variable currentEmployee. The output illustrates that the appropriate methods for each class are indeed invoked. All calls to method toString and earnings are resolved at execution time, based on the type of the object to which currentEmployee refers. This process is known as dynamic binding or late binding. For example, line 46 implicitly invokes method toString of the object to which currentEmployee refers. As a result of dynamic binding, Java decides which class’s toString method to call at execution time rather than at compile time. Note that only the methods of class Employee can be called via an Employee variable (and Employee, of course, includes the methods of class Object). (Section 9.7 discusses the set of methods that all classes inherit from class Object.) A superclass reference can be used to invoke only methods of the superclass (and the superclass can invoke overridden versions of these in the subclass).
+
+We perform special processing on BasePlusCommissionEmployee objects—as we encounter these objects, we increase their base salary by 10%. When processing objects polymorphically, we typically do not need to worry about the “specifics,” but to adjust the base salary, we do have to determine the specific type of Employee object at execution time. Line 49 uses the instanceof operator to determine whether a particular Employee object’s type is BasePlusCommissionEmployee. The condition in line 49 is true if the object referenced by currentEmployee is a BasePlusCommissionEmployee. This would also be true for any object of a BasePlusCommissionEmployee subclass because of the is-a relationship a subclass has with its superclass. Lines 53–54 downcast currentEmployee from type Employee to type BasePlusCommissionEmployee—this cast is allowed only if the object has an is-a relationship with BasePlusCommissionEmployee. The condition at line 49 ensures that this is the case. This cast is required if we are to invoke subclass BasePlusCommissionEmployee methods getBaseSalary and setBaseSalary on the current Employee object—as you’ll see momentarily, attempting to invoke a subclass-only method directly on a superclass reference is a compilation error.
+
+Common Programming Error 10.3
+cpe-jt-color1.jpg
+
+Assigning a superclass variable to a subclass variable (without an explicit cast) is a compilation error.
+
+Software Engineering Observation 10.5
+seo-jtcolor1.jpg
+
+If at execution time the reference of a subclass object has been assigned to a variable of one of its direct or indirect superclasses, it is acceptable to cast the reference stored in that superclass variable back to a reference of the subclass type. Before performing such a cast, use the instanceof operator to ensure that the object is indeed an object of an appropriate subclass type.
+
+Common Programming Error 10.4
+cpe-jt-color1.jpg
+
+When downcasting an object, a ClassCastException occurs if at execution time the object does not have an is-a relationship with the type specified in the cast operator. An object can be cast only to its own type or to the type of one of its superclasses.
+
+If the instanceof expression in line 49 is true, the body of the if statement (lines 49–61) performs the special processing required for the BasePlusCommissionEmployee object. Using BasePlusCommissionEmployee variable employee, lines 56 and 57 invoke subclass-only methods getBaseSalary and setBaseSalary to retrieve and update the employee’s base salary with the 10% raise.
+
+Lines 63–64 invoke method earnings on currentEmployee, which calls the appropriate subclass object’s earnings method polymorphically. As you can see, obtaining the earnings of the SalariedEmployee, HourlyEmployee and CommissionEmployee polymorphically in lines 63–64 produces the same result as obtaining these employees’ earnings individually in lines 22–27. However, the earnings amount obtained for the BasePlusCommissionEmployee in lines 63–64 is higher than that obtained in lines 28–30, due to the 10% increase in its base salary.
+
+Lines 68–70 display each employee’s type as a string. Every object in Java knows its own class and can access this information through the getClass method, which all classes inherit from class Object. The getClass method returns an object of type Class (from package java.lang), which contains information about the object’s type, including its class name. Line 70 invokes the getClass method on the object to get its runtime class (i.e., a Class object that represents the object’s type). Then method getName is invoked on the object returned by getClass to get the class’s name. To learn more about class Class, see its online documentation at java.sun.com/javase/6/docs/api/java/lang/Class.html.
+
+In the previous example, we avoided several compilation errors by downcasting an Employee variable to a BasePlusCommissionEmployee variable in lines 53–54. If you remove the cast operator ( BasePlusCommissionEmployee ) from line 54 and attempt to assign Employee variable currentEmployee directly to BasePlusCommissionEmployee variable employee, you’ll receive an “incompatible types” compilation error. This error indicates that the attempt to assign the reference of superclass object commissionEmployee to subclass variable basePlusCommissionEmployee is not allowed. The compiler prevents this assignment because a CommissionEmployee is not a BasePlusCommissionEmployee—the is-a relationship applies only between the subclass and its superclasses, not vice versa.
+
+Similarly, if lines 56, 57 and 60 used superclass variable currentEmployee, rather than subclass variable employee, to invoke subclass-only methods getBaseSalary and setBaseSalary, we would receive a “cannot find symbol” compilation error on each of these lines. Attempting to invoke subclass-only methods on a superclass reference is not allowed. While lines 56, 57 and 60 execute only if instanceof in line 49 returns true to indicate that currentEmployee has been assigned a reference to a BasePlusCommissionEmployee object, we cannot attempt to invoke subclass BasePlusCommissionEmployee methods getBaseSalary and setBaseSalary on superclass Employee reference currentEmployee. The compiler would generate errors in lines 56, 57 and 60, because getBaseSalary and setBaseSalary are not superclass methods and cannot be invoked on a superclass variable. Although the actual method that is called depends on the object’s type at execution time, a variable can be used to invoke only those methods that are members of that variable’s type, which the compiler verifies. Using a superclass Employee variable, we can invoke only methods found in class Employee—earnings, toString and Employee’s get and set methods.
+
+10.5.7 Summary of the Allowed Assignments Between Superclass and Subclass Variables
+Now that you have seen a complete application that processes diverse subclass objects polymorphically, we summarize what you can and cannot do with superclass and subclass objects and variables. Although a subclass object also is a superclass object, the two objects are nevertheless different. As discussed previously, subclass objects can be treated as if they are superclass objects. But because the subclass can have additional subclass-only members, assigning a superclass reference to a subclass variable is not allowed without an explicit cast—such an assignment would leave the subclass members undefined for the superclass object.
+
+In the current section and in Section 10.3 and Chapter 9, we have discussed four ways to assign superclass and subclass references to variables of superclass and subclass types:
+
+Assigning a superclass reference to a superclass variable is straightforward.
+Assigning a subclass reference to a subclass variable is straightforward.
+Assigning a subclass reference to a superclass variable is safe, because the subclass object is an object of its superclass. However, this reference can be used to refer only to superclass members. If this code refers to subclass-only members through the superclass variable, the compiler reports errors.
+Attempting to assign a superclass reference to a subclass variable is a compilation error. To avoid this error, the superclass reference must be cast to a subclass type explicitly. At execution time, if the object to which the reference refers is not a subclass object, an exception will occur. (For more on exception handling, see Chapter 13.) The instanceof operator can be used to ensure that such a cast is performed only if the object is a subclass object.
+
+
+
+
+
+
+
+
+This java program uses Hierarchical inheritance and is useful to Calculate Salary of Full Time or Part Time Employee who works in a Company. Here we have a parent class Employee in which we have declared variables like name, address, gender and age. We take the input of these variables by invoking the Constructor. We also have a method called display() which is used to display the details of the Employee.
+
+Second class fullTimeEmployees inherits the Employee class and is used to get the designation and salary of an Employee. We have a method display() which first calls the super method i.e., the display() method present in Employee class.
+
+Third class partTimeEmployees inherits the Employee class and is used to get the Working hours of a part time employee. We have the same display() method which first class the super display method and prints the other details.
+
+In the Employees class we are creating objects to the fullTimeEmployees and partTimeEmployees classes. We can implement this program using array of objects also. You can refer this example and implement array of objects.
+
+Java Program to Calculate Salary of an Employee
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+import java.util.Scanner;
+ 
+class Employee
+{
+    int age;
+    String name, address, gender;
+    Scanner get = new Scanner(System.in);
+    Employee()
+    {
+        System.out.println("Enter Name of the Employee:");
+        name = get.nextLine();
+        System.out.println("Enter Gender of the Employee:");
+        gender = get.nextLine();
+        System.out.println("Enter Address of the Employee:");
+        address = get.nextLine();
+        System.out.println("Enter Age:");
+        age = get.nextInt();
+    }
+ 
+    void display()
+    {
+        System.out.println("Employee Name: "+name);
+        System.out.println("Age: "+age);
+        System.out.println("Gender: "+gender);
+        System.out.println("Address: "+address);
+    }
+}
+ 
+class fullTimeEmployees extends Employee
+{
+    float salary;
+    int des;
+    fullTimeEmployee()
+    {
+        System.out.println("Enter Designation:");
+        des = get.nextInt();
+        System.out.println("Enter Salary:");
+        salary = get.nextFloat();
+    }
+    void display()
+    {
+        System.out.println("=============================="+"\n"+"Full Time Employee Details"+"\n"+"=============================="+"\n");
+        super.display();
+        System.out.println("Salary: "+salary);
+        System.out.println("Designation: "+des);
+    }
+}
+ 
+class partTimeEmployees extends Employee
+{
+    int workinghrs, rate;
+    partTimeEmployees()
+    {
+        System.out.println("Enter Number of Working Hours:");
+        workinghrs = get.nextInt();
+    }
+    void calculatepay()
+    {
+        rate = 8 * workinghrs;
+    }
+ 
+    void display()
+    {
+        System.out.println("=============================="+"\n"+"Part Time Employee Details"+"\n"+"=============================="+"\n");
+        super.display();
+        System.out.println("Number of Working Hours: "+workinghrs);
+        System.out.println("Salary for "+workinghrs+" working hours is: $"+rate);
+    }
+}
+ 
+class Employees
+{
+    public static void main(String args[])
+    {
+        System.out.println("================================"+"\n"+"Enter Full Time Employee Details"+"\n"+"================================"+"\n");
+        fullTimeEmployees ob1 = new fullTimeEmployees();
+        partTimeEmployees ob = new partTimeEmployees();
+        System.out.println("================================"+"\n"+"Enter Part Time Employee Details"+"\n"+"================================"+"\n");
+        ob1.display();
+        ob.calculatepay();
+        ob.display();
+    }
+}
+
+
+
+
+========
+Case Study: Creating and Using Interfaces
+Our next example (Figs. 10.11–10.13) reexamines the payroll system of Section 10.5. Suppose that the company involved wishes to perform several accounting operations in a single accounts payable application—in addition to calculating the earnings that must be paid to each employee, the company must also calculate the payment due on each of several invoices (i.e., bills for goods purchased). Though applied to unrelated things (i.e., employees and invoices), both operations have to do with obtaining some kind of payment amount. For an employee, the payment refers to the employee’s earnings. For an invoice, the payment refers to the total cost of the goods listed on the invoice. Can we calculate such different things as the payments due for employees and invoices in a single application polymorphically? Does Java offer a capability that requires that unrelated classes implement a set of common methods (e.g., a method that calculates a payment amount)? Java interfaces offer exactly this capability.
+
+Interfaces define and standardize the ways in which things such as people and systems can interact with one another. For example, the controls on a radio serve as an interface between radio users and a radio’s internal components. The controls allow users to perform only a limited set of operations (e.g., changing the station, adjusting the volume, choosing between AM and FM), and different radios may implement the controls in different ways (e.g., using push buttons, dials, voice commands). The interface specifies what operations a radio must permit users to perform but does not specify how the operations are performed. Similarly, the interface between a driver and a car with a manual transmission includes the steering wheel, the gear shift, the clutch pedal, the gas pedal and the brake pedal. This same interface is found in nearly all manual transmission cars, enabling someone who knows how to drive one particular manual transmission car to drive just about any manual transmission car. The components of each individual car may look different, but their general purpose is the same—to allow people to drive the car.
+
+Software objects also communicate via interfaces. A Java interface describes a set of methods that can be called on an object, to tell the object to perform some task or return some piece of information, for example. The next example introduces an interface named Payable to describe the functionality of any object that must be capable of being paid and thus must offer a method to determine the proper payment amount due. An interface declaration begins with the keyword interface and contains only constants and abstract methods. Unlike classes, all interface members must be public, and interfaces may not specify any implementation details, such as concrete method declarations and instance variables. So all methods declared in an interface are implicitly public abstract methods and all fields are implicitly public, static and final.
+
+Good Programming Practice 10.1
+gppjtcolor1.jpg
+
+According to Chapter 9 of the Java Language Specification, it is proper style to declare an interface’s methods without keywords public and abstract because they are redundant in interface method declarations. Similarly, constants should be declared without keywords public, static and final because they, too, are redundant.
+
+To use an interface, a concrete class must specify that it implements the interface and must declare each method in the interface with the signature specified in the interface declaration. A class that does not implement all the methods of the interface is an abstract class and must be declared abstract. Implementing an interface is like signing a contract with the compiler that states, “I will declare all the methods specified by the interface or I will declare my class abstract.”
+
+Common Programming Error 10.6
+cpe-jt-color1.jpg
+
+Failing to implement any method of an interface in a concrete class that implements the interface results in a compilation error indicating that the class must be declared abstract.
+
+An interface is typically used when disparate (i.e., unrelated) classes need to share common methods and constants. This allows objects of unrelated classes to be processed polymorphically—objects of classes that implement the same interface can respond to the same method calls. You can create an interface that describes the desired functionality, then implement this interface in any classes that require that functionality. For example, in the accounts payable application developed in this section, we implement interface Payable in any class that must be able to calculate a payment amount (e.g., Employee, Invoice).
+
+An interface is often used in place of an abstract class when there is no default implementation to inherit—that is, no fields and no default method implementations. Interfaces are typically public types, so they are normally declared in files by themselves with the same name as the interface and the .java file-name extension.
+
+10.7.1 Developing a Payable Hierarchy
+To build an application that can determine payments for employees and invoices alike, we first create interface Payable, which contains method getPaymentAmount that returns a double amount that must be paid for an object of any class that implements the interface. Method getPaymentAmount is a general purpose version of method earnings of the Employee hierarchy—method earnings calculates a payment amount specifically for an Employee, while getPaymentAmount can be applied to a broad range of unrelated objects. After declaring interface Payable, we introduce class Invoice, which implements interface Payable. We then modify class Employee such that it also implements interface Payable. Finally, we update Employee subclass SalariedEmployee to “fit” into the Payable hierarchy (i.e., we rename SalariedEmployee method earnings as getPaymentAmount).
+
+Good Programming Practice 10.2
+gppjtcolor1.jpg
+
+When declaring a method in an interface, choose a method name that describes the method’s purpose in a general manner, because the method may be implemented by many unrelated classes.
+
+Classes Invoice and Employee both represent things for which the company must be able to calculate a payment amount. Both classes implement Payable, so a program can invoke method getPaymentAmount on Invoice objects and Employee objects alike. As we’ll soon see, this enables the polymorphic processing of Invoices and Employees required for our company’s accounts payable application.
+
+The UML class diagram in Fig. 10.10 shows the hierarchy used in our accounts payable application. The hierarchy begins with interface Payable. The UML distinguishes an interface from other classes by placing the word “interface” in guillemets (« and ») above the interface name. The UML expresses the relationship between a class and an interface through a relationship known as a realization. A class is said to “realize,” or implement, the methods of an interface. A class diagram models a realization as a dashed arrow with a hollow arrowhead pointing from the implementing class to the interface. The diagram in Fig. 10.10 indicates that classes Invoice and Employee each realize (i.e., implement) interface Payable. Note that, as in the class diagram of Fig. 10.2, class Employee appears in italics, indicating that it is an abstract class. Concrete class SalariedEmployee extends Employee and inherits its superclass’s realization relationship with interface Payable.
+
+
+      Figure 10.10
+   
+Fig. 10.10 Payable interface hierarchy UML class diagram.
+
+10.7.2 Declaring Interface Payable
+The declaration of interface Payable begins in Fig. 10.11 at line 4. Interface Payable contains public abstract method getPaymentAmount (line 6). Note that the method is not explicitly declared public or abstract. Interface methods must be public and abstract, so they do not need to be declared as such. Interface Payable has only one method—interfaces can have any number of methods. (We’ll see later in the book the notion of “tagging interfaces”—these actually have no methods. In fact, a tagging interface contains no constant values, either—it simply contains an empty interface declaration.) In addition, method getPaymentAmount has no parameters, but interface methods can have parameters.
+
+Fig. 10.11. Payable interface declaration.
+ 1  // Fig. 10.11: Payable.java
+ 2  // Payable interface declaration.
+ 3
+ 4  public interface Payable
+ 5  {
+ 6     double getPaymentAmount(); // calculate payment; no implementation
+ 7  } // end interface Payable
+10.7.3 Creating Class Invoice
+We now create class Invoice (Fig. 10.12) to represent a simple invoice that contains billing information for only one kind of part. The class declares private instance variables partNumber, partDescription, quantity and pricePerItem (in lines 6–9) that indicate the part number, a description of the part, the quantity of the part ordered and the price per item. Class Invoice also contains a constructor (lines 12–19), get and set methods (lines 22–67) that manipulate the class’s instance variables and a toString method (lines 70–75) that returns a string representation of an Invoice object. Note that methods setQuantity (lines 46–49) and setPricePerItem (lines 58–61) ensure that quantity and pricePerItem obtain only nonnegative values.
+
+Fig. 10.12. Invoice class that implements Payable.
+ 1  // Fig. 10.12: Invoice.java
+ 2  // Invoice class implements Payable.
+ 3
+ 4  public class Invoice implements Payable
+ 5  {
+ 6     private String partNumber;
+ 7     private String partDescription;
+ 8     private int quantity;
+ 9     private double pricePerItem;
+10
+11     // four-argument constructor
+12     public Invoice( String part, String description, int count,
+13        double price )
+14     {
+15        partNumber = part;
+16        partDescription = description;
+17        setQuantity( count ); // validate and store quantity
+18        setPricePerItem( price ); // validate and store price per item
+19     } // end four-argument Invoice constructor
+20
+21     // set part number
+22     public void setPartNumber( String part )
+23     {
+24        partNumber = part;
+25     } // end method setPartNumber
+26
+27     // get part number
+28     public String getPartNumber()
+29     {
+30        return partNumber;
+31     } // end method getPartNumber
+32
+33     // set description
+34     public void setPartDescription( String description )
+35     {
+36        partDescription = description;
+37     } // end method setPartDescription
+38
+39     // get description
+40     public String getPartDescription()
+41     {
+42        return partDescription;
+43     } // end method getPartDescription
+44
+45     // set quantity
+46     public void setQuantity( int count )
+47     {
+48        quantity = ( count < 0 ) ? 0 : count; // quantity cannot be negative
+49     } // end method setQuantity
+50
+51     // get quantity
+52     public int getQuantity()
+53     {
+54        return quantity;
+55     } // end method getQuantity
+56
+57     // set price per item
+58     public void setPricePerItem( double price )
+59     {
+60        pricePerItem = ( price < 0.0 ) ? 0.0 : price; // validate price
+61     } // end method setPricePerItem
+62
+63     // get price per item
+64     public double getPricePerItem()
+65     {
+66        return pricePerItem;
+67     } // end method getPricePerItem
+68
+69     // return String representation of Invoice object
+70     public String toString()
+71     {
+72        return String.format( "%s: \n%s: %s (%s) \n%s: %d \n%s: $%,.2f",
+73           "invoice", "part number", getPartNumber(), getPartDescription(),
+74           "quantity",  getQuantity(), "price per item", getPricePerItem() );
+75     } // end method toString
+76
+77     // method required to carry out contract with interface Payable
+78     public double getPaymentAmount()
+79     {
+80        return getQuantity() * getPricePerItem(); // calculate total cost
+81     } // end method getPaymentAmount
+82  } // end class Invoice
+Line 4 of Fig. 10.12 indicates that class Invoice implements interface Payable. Like all classes, class Invoice also implicitly extends Object. Java does not allow subclasses to inherit from more than one superclass, but it does allow a class to inherit from a superclass and implement more than one interface. In fact, a class can implement as many interfaces as it needs, in addition to extending one other class. To implement more than one interface, use a comma-separated list of interface names after keyword implements in the class declaration, as in:
+
+public class ClassName extends SuperclassName implements FirstInterface,
+    SecondInterface, ...
+All objects of a class that implement multiple interfaces have the is-a relationship with each implemented interface type.
+
+Class Invoice implements the one method in interface Payable. Method getPaymentAmount is declared in lines 78–81. The method calculates the total payment required to pay the invoice. The method multiplies the values of quantity and pricePerItem (obtained through the appropriate get methods) and returns the result (line 80). This method satisfies the implementation requirement for this method in interface Payable—we have fulfilled the interface contract with the compiler.
+
+10.7.4 Modifying Class Employee to Implement Interface Payable
+We now modify class Employee such that it implements interface Payable. Figure 10.13 contains the modified Employee class. This class declaration is identical to that of Fig. 10.4 with only two exceptions. First, line 4 of Fig. 10.13 indicates that class Employee now implements interface Payable. Second, since Employee now implements interface Payable, we must rename earnings to getPaymentAmount throughout the Employee hierarchy. As with method earnings in the version of class Employee in Fig. 10.4, however, it does not make sense to implement method getPaymentAmount in class Employee because we cannot calculate the earnings payment owed to a general Employee—first we must know the specific type of Employee. In Fig. 10.4, we declared method earnings as abstract for this reason, and as a result class Employee had to be declared abstract. This forced each Employee subclass to override earnings with a concrete implementation.
+
+Fig. 10.13. Employee class that implements Payable.
+ 1  // Fig. 10.13: Employee.java
+ 2  // Employee abstract superclass implements Payable.
+ 3
+ 4  public abstract class Employee implements Payable
+ 5  {
+ 6     private String firstName;
+ 7     private String lastName;
+ 8     private String socialSecurityNumber;
+ 9
+10     // three-argument constructor
+11     public Employee( String first, String last, String ssn )
+12     {
+13        firstName = first;
+14        lastName = last;
+15        socialSecurityNumber = ssn;
+16     } // end three-argument Employee constructor
+17
+18     // set first name
+19     public void setFirstName( String first )
+20     {
+21        firstName = first;
+22     } // end method setFirstName
+23
+24     // return first name
+25     public String getFirstName()
+26     {
+27        return firstName;
+28     } // end method getFirstName
+29
+30     // set last name
+31     public void setLastName( String last )
+32     {
+33        lastName = last;
+34     } // end method setLastName
+35
+36     // return last name
+37     public String getLastName()
+38     {
+39        return lastName;
+40     } // end method getLastName
+41
+42     // set social security number
+43     public void setSocialSecurityNumber( String ssn )
+44     {
+45        socialSecurityNumber = ssn; // should validate
+46     } // end method setSocialSecurityNumber
+47
+48     // return social security number
+49     public String getSocialSecurityNumber()
+50     {
+51        return socialSecurityNumber;
+52     } // end method getSocialSecurityNumber
+53
+54     // return String representation of Employee object
+55     public String toString()
+56     {
+57        return String.format( "%s %s\nsocial security number: %s",
+58           getFirstName(), getLastName(), getSocialSecurityNumber() );
+59     } // end method toString
+60
+61     // Note: We do not implement Payable method getPaymentAmount here so
+62     // this class must be declared abstract to avoid a compilation error.
+63  } // end abstract class Employee
+In Fig. 10.13, we handle this situation differently. Recall that when a class implements an interface, the class makes a contract with the compiler stating either that the class will implement each of the methods in the interface or that the class will be declared abstract. If the latter option is chosen, we do not need to declare the interface methods as abstract in the abstract class—they are already implicitly declared as such in the interface. Any concrete subclass of the abstract class must implement the interface methods to fulfill the superclass’s contract with the compiler. If the subclass does not do so, it too must be declared abstract. As indicated by the comments in lines 61–62, class Employee of Fig. 10.13 does not implement method getPaymentAmount, so the class is declared abstract. Each direct Employee subclass inherits the superclass’s contract to implement method getPaymentAmount and thus must implement this method to become a concrete class for which objects can be instantiated. A class that extends one of Employee’s concrete subclasses will inherit an implementation of getPaymentAmount and thus will also be a concrete class.
+
+10.7.5 Modifying Class SalariedEmployee for Use in the Payable Hierarchy
+Figure 10.14 contains a modified version of class SalariedEmployee that extends Employee and fulfills superclass Employee’s contract to implement method getPaymentAmount of interface Payable. This version of SalariedEmployee is identical to that of Fig. 10.5 with the exception that the version here implements method getPaymentAmount (lines 30–33) instead of method earnings. The two methods contain the same functionality but have different names. Recall that the Payable version of the method has a more general name to be applicable to possibly disparate classes. The remaining Employee subclasses (e.g., HourlyEmployee, CommissionEmployee and BasePlusCommissionEmployee) also must be modified to contain method getPaymentAmount in place of earnings to reflect the fact that Employee now implements Payable. We leave these modifications as an exercise and use only SalariedEmployee in our test program in this section.
+
+Fig. 10.14. SalariedEmployee class that implements interface Payable method getPaymentAmount.
+ 1  // Fig. 10.14: SalariedEmployee.java
+ 2  // SalariedEmployee class extends Employee, which implements Payable.
+ 3
+ 4  public class SalariedEmployee extends Employee
+ 5  {
+ 6     private double weeklySalary;
+ 7
+ 8     // four-argument constructor
+ 9     public SalariedEmployee( String first, String last, String ssn,
+10        double salary )
+11     {
+12        super( first, last, ssn ); // pass to Employee constructor
+13        setWeeklySalary( salary ); // validate and store salary
+14     } // end four-argument SalariedEmployee constructor
+15
+16     // set salary
+17     public void setWeeklySalary( double salary )
+18     {
+19        weeklySalary = salary < 0.0 ? 0.0 : salary;
+20     } // end method setWeeklySalary
+21
+22     // return salary
+23     public double getWeeklySalary()
+24     {
+25        return weeklySalary;
+26     } // end method getWeeklySalary
+27
+28     // calculate earnings; implement interface Payable method that was
+29     // abstract in superclass Employee
+30     public double getPaymentAmount()
+31     {
+32        return getWeeklySalary();
+33     } // end method getPaymentAmount
+34
+35     // return String representation of SalariedEmployee object
+36     public String toString()
+37     {
+38        return String.format( "salaried employee: %s\n%s: $%,.2f",
+39           super.toString(), "weekly salary", getWeeklySalary() );
+40     } // end method toString
+41  } // end class SalariedEmployee
+When a class implements an interface, the same is-a relationship provided by inheritance applies. For example, class Employee implements Payable, so we can say that an Employee is a Payable. In fact, objects of any classes that extend Employee are also Payable objects. SalariedEmployee objects, for instance, are Payable objects. As with inheritance relationships, an object of a class that implements an interface may be thought of as an object of the interface type. Objects of any subclasses of the class that implements the interface can also be thought of as objects of the interface type. Thus, just as we can assign the reference of a SalariedEmployee object to a superclass Employee variable, we can assign the reference of a SalariedEmployee object to an interface Payable variable. Invoice implements Payable, so an Invoice object also is a Payable object, and we can assign the reference of an Invoice object to a Payable variable.
+
+Software Engineering Observation 10.7
+seo-jtcolor1.jpg
+
+Inheritance and interfaces are similar in their implementation of the is-a relationship. An object of a class that implements an interface may be thought of as an object of that interface type. An object of any subclasses of a class that implements an interface also can be thought of as an object of the interface type.
+
+Software Engineering Observation 10.8
+seo-jtcolor1.jpg
+
+The is-a relationship that exists between superclasses and subclasses, and between interfaces and the classes that implement them, holds when passing an object to a method. When a method parameter receives a variable of a superclass or interface type, the method processes the object received as an argument polymorphically.
+
+Software Engineering Observation 10.9
+seo-jtcolor1.jpg
+
+Using a superclass reference, we can polymorphically invoke any method specified in the superclass declaration (and in class Object). Using an interface reference, we can polymorphically invoke any method specified in the interface declaration (and in class Object—because a variable of an interface type must refer to an object to call methods, and all objects contain the methods of class Object).
+
+10.7.6 Using Interface Payable to Process Invoices and Employees Polymorphically
+PayableInterfaceTest (Fig. 10.15) illustrates that interface Payable can be used to process a set of Invoices and Employees polymorphically in a single application. Line 9 declares payableObjects and assigns it an array of four Payable variables. Lines 12–13 assign the references of Invoice objects to the first two elements of payableObjects. Lines 14–17 then assign the references of SalariedEmployee objects to the remaining two elements of payableObjects. These assignments are allowed because an Invoice is a Payable, a SalariedEmployee is an Employee and an Employee is a Payable. Lines 23–29 use the enhanced for statement to polymorphically process each Payable object in payableObjects, printing the object as a String, along with the payment amount due. Note that line 27 invokes method toString off a Payable interface reference, even though toString is not declared in interface Payable—all references (including those of interface types) refer to objects that extend Object and therefore have a toString method. (Note that toString also can be invoked implicitly here.) Line 28 invokes Payable method getPaymentAmount to obtain the payment amount for each object in payableObjects, regardless of the actual type of the object. The output reveals that the method calls in lines 27– 28 invoke the appropriate class’s implementation of methods toString and getPaymentAmount. For instance, when currentEmployee refers to an Invoice during the first iteration of the for loop, class Invoice’s toString and getPaymentAmount execute.
+
+Fig. 10.15. Payable interface test program processing Invoices and Employees polymorphically.
+ 1  // Fig. 10.15: PayableInterfaceTest.java
+ 2  // Tests interface Payable.
+ 3
+ 4  public class PayableInterfaceTest
+ 5  {
+ 6     public static void main( String args[] )
+ 7     {
+ 8        // create four-element Payable array
+ 9        Payable payableObjects[] = new Payable[ 4 ];
+10
+11        // populate array with objects that implement Payable
+12        payableObjects[ 0 ] = new Invoice( "01234", "seat", 2, 375.00 );
+13        payableObjects[ 1 ] = new Invoice( "56789", "tire", 4, 79.95 );
+14        payableObjects[ 2 ] =
+15           new SalariedEmployee( "John", "Smith", "111-11-1111", 800.00 );
+16        payableObjects[ 3 ] =
+17           new SalariedEmployee( "Lisa", "Barnes", "888-88-8888", 1200.00 );
+18
+19        System.out.println(
+20           "Invoices and Employees processed polymorphically:\n" );
+21
+22        // generically process each element in array payableObjects
+23        for ( Payable currentPayable : payableObjects )
+24        {
+25           // output currentPayable and its appropriate payment amount
+26           System.out.printf( "%s \n%s: $%,.2f\n\n",
+27              currentPayable.toString(),
+28              "payment due", currentPayable.getPaymentAmount() );
+29        } // end for
+30     } // end main
+31  } // end class PayableInterfaceTest
+Invoices and Employees processed polymorphically:
+
+invoice:
+part number: 01234 (seat)
+quantity: 2
+price per item: $375.00
+payment due: $750.00
+
+invoice:
+part number: 56789 (tire)
+quantity: 4
+price per item: $79.95
+payment due: $319.80
+
+salaried employee: John Smith
+social security number: 111-11-1111
+weekly salary: $800.00
+payment due: $800.00
+
+salaried employee: Lisa Barnes
+social security number: 888-88-8888
+weekly salary: $1,200.00
+payment due: $1,200.00
+Software Engineering Observation 10.10
+seo-jtcolor1.jpg
+
+All methods of class Object can be called by using a reference of an interface type. A reference refers to an object, and all objects inherit the methods of class Object.
+
+10.7.7 Declaring Constants with Interfaces
+As we mentioned an interface can declare constants. The constants are implicitly public, static and final—again, these keywords are not required in the interface declaration. One popular use of an interface is to declare a set of constants that can be used in many class declarations. Consider interface Constants:
+
+public interface Constants
+{
+   int ONE = 1;
+   int TWO = 2;
+   int THREE = 3;
+}
+A class can use these constants by importing the interface, then referring to each constant as Constants.ONE, Constants.TWO and Constants.THREE. Note that a class can refer to the imported constants with just their names (i.e., ONE, TWO and THREE) if it uses a static import declaration (presented in Section 8.12) to import the interface.
+
+Software Engineering Observation 10.11
+seo-jtcolor1.jpg
+
+As of Java SE 5.0, it became a better programming practice to create sets of constants as enumerations with keyword enum. See Section 6.10 for an introduction to enum and Section 8.9 for additional enum details.
+
+10.7.8 Common Interfaces of the Java API
+In this section, we overview several common interfaces found in the Java API. The power and flexibility of interfaces is used frequently throughout the Java API. These interfaces are implemented and used in the same manner as the interfaces you create (e.g., interface Payable in Section 10.7.2). As you’ll see throughout this book, the Java API’s interfaces enable you to use your own classes within the frameworks provided by Java, such as comparing objects of your own types and creating tasks that can execute concurrently with other tasks in the same program. Figure 10.16 presents a brief overview of a few of the more popular interfaces of the Java API.
+
+Fig. 10.16. Common interfaces of the Java API.
+Interface
+
+Description
+
+Comparable
+
+As you learned in Chapter 2, Java contains several comparison operators (e.g., <, <=, >, >=, ==, !=) that allow you to compare primitive values. However, these operators cannot be used to compare the contents of objects. Interface Comparable is used to allow objects of a class that implements the interface to be compared to one another. The interface contains one method, compareTo, that compares the object that calls the method to the object passed as an argument to the method. Classes must implement compareTo such that it returns a value indicating whether the object on which it is invoked is less than (negative integer return value), equal to (0 return value) or greater than (positive integer return value) the object passed as an argument, using any criteria specified by the programmer. For example, if class Employee implements Comparable, its compareTo method could compare Employee objects by their earnings amounts. Interface Comparable is commonly used for ordering objects in a collection such as an array. We use Comparable in Chapter 15, Generics, and Chapter 16, Collections.
+
+Serializable
+
+An interface used to identify classes whose objects can be written to (i.e., serialized) or read from (i.e., deserialized) some type of storage (e.g., file on disk, database field) or transmitted across a network. We use Serializable in Chapter 14, Files and Streams, and Chapter 19, Networking.
+
+Runnable
+
+Implemented by any class for which objects of that class should be able to execute in parallel using a technique called multithreading (discussed in Chapter 18, Multithreading). The interface contains one method, run, which describes the behavior of an object when executed.
+
+GUI event-listener interfaces
+
+You work with graphical user interfaces (GUIs) every day. For example, in your web browser, you might type in a text field the address of a website to visit, or you might click a button to return to the previous site you visited. When you type a website address or click a button in the web browser, the browser must respond to your interaction and perform the desired task for you. Your interaction is known as an event, and the code that the browser uses to respond to an event is known as an event handler. In Chapter 11, GUI Components: Part 1, and Chapter 17, GUI Components: Part 2, you’ll learn how to build Java GUIs and how to build event handlers to respond to user interactions. The event handlers are declared in classes that implement an appropriate event-listener interface. Each event-listener interface specifies one or more methods that must be implemented to respond to user interactions.
+
+SwingConstants
+
+Contains constants used in GUI programming to position GUI elements on the screen. We explore GUI programming in Chapters 11 and 17.
+
+
+
+
+======================
